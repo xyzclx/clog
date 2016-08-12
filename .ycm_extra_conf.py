@@ -86,7 +86,7 @@ flags = [
 '-I',
 '/usr/local/cuda-7.5/include',
 '-I',
-'/caffepro/src',
+'./include',
 ]
 
 
