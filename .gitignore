@@ -61,5 +61,6 @@ matlab/prototxt/experiments/
 .vscode/
 build/
 bin/
+unit_test
 
 caffepro_tools/sample

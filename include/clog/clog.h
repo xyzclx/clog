@@ -1,7 +1,6 @@
 
 #pragma once 
 
-#include <boost/shared_ptr.hpp>
 #include <string>
 #include <ostream>
 #include <exception>
@@ -10,7 +9,9 @@
 #define CLOG(severity)      CLOG##_##severity
 
 #define CLOG_CREATE_LOGGER(severity) \
-    clog::clog_logger_helper<clog::clog_logger_##severity>(__FILE__, __LINE__)
+    for (clog::clog_logger_##severity __logger(__FILE__, __LINE__); \
+        __logger.is_alive(); __logger.close()) \
+        __logger
 
 #define CLOG_INFO           CLOG_CREATE_LOGGER(info)
 #define CLOG_WARNING        CLOG_CREATE_LOGGER(warning)
@@ -22,9 +23,8 @@
     public: \
         clog_logger_##severity(const std::string &source_file, int64_t line, const std::string &msg_cap = ""); \
         \
-        ~clog_logger_##severity(); \
+        virtual void flush(); \
     }
-
 
 namespace clog {
     void init_clog();
@@ -49,75 +49,45 @@ namespace clog {
     
     class clog_logger_base {
     public:
-        ~clog_logger_base();
-
-        void raise_logger_exception() const;
+        void close();
 
     public:
-        std::stringstream& message() { return msg_; }
-        void set_auto_throw_exception(bool enabled) { auto_throw_exception_ = enabled; }
+        bool is_alive() { return is_alive_; }
+
+    public:
+        template <typename T>
+        clog_logger_base& operator << (const T &t) {
+            msg_ << t;
+            return *this;
+        }
 
     protected:
         clog_logger_base(const std::string &source_file, int64_t line, const std::string &msg_cap = "");
-        
+        void raise_logger_exception() const;
+
+        virtual void flush() = 0;
+
     protected:
         std::stringstream msg_;
         std::string source_file_;
         int64_t line_;
-        bool auto_throw_exception_;
+        bool is_alive_;
+        bool enable_auto_exception_;
     };
+
+    template <>
+    clog_logger_base& clog_logger_base::operator<< <fatal_error>(const fatal_error &except);
+    
+    template <>
+    clog_logger_base& clog_logger_base::operator<< <std::runtime_error>(const std::runtime_error &except);
+
+    template <>
+    clog_logger_base& clog_logger_base::operator<< <std::exception>(const std::exception &except);
 
     CLOG_DECL_LOGGER(info);
     CLOG_DECL_LOGGER(warning);
     CLOG_DECL_LOGGER(error);
     CLOG_DECL_LOGGER(fatal);
-
-    template <class LOGGER>
-    class clog_logger_helper {
-    public:
-        clog_logger_helper(const std::string &source_file, int64_t line, const std::string &msg_cap = "") {
-            init_clog();
-            logger_.reset(new LOGGER(source_file, line, msg_cap));
-        }
-
-        template <typename T>
-        clog_logger_helper<LOGGER>& operator << (const T &t) {
-            logger_->message() << t; 
-            return *this;
-        }
-
-        clog_logger_helper<LOGGER>& operator << (const fatal_error &err) {
-            logger_->set_auto_throw_exception(false);
-            
-            if (err.default_error()) {
-                try {
-                    logger_->raise_logger_exception();
-                }
-                catch (const fatal_error &except) {
-                    logger_.reset();
-                    throw except;
-                }
-            }
-            else {
-                logger_.reset();
-                throw err;
-            }
-
-            return *this;
-        }
-
-        clog_logger_helper<LOGGER>& operator << (const std::runtime_error &err) {
-            logger_->set_auto_throw_exception(false);
-            logger_.reset();
-
-            throw err;
-            return *this;
-        }
-
-    private:
-        boost::shared_ptr<LOGGER> logger_;
-    };
-
 }
 
 

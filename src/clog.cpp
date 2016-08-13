@@ -17,7 +17,7 @@
     }
 
 #define CLOG_IMPL_LOGGER_DES(severity) \
-    clog_logger_##severity::~clog_logger_##severity() { \
+    void clog_logger_##severity::flush() { \
         BOOST_LOG_TRIVIAL(severity) << msg_.str(); \
     }
 
@@ -75,30 +75,60 @@ namespace clog {
     }
 
     clog_logger_base::clog_logger_base(const std::string &source_file, int64_t line, const std::string &msg_cap)
-        : source_file_(source_file), line_(line), auto_throw_exception_(false) {
+        : source_file_(source_file), line_(line), is_alive_(true), enable_auto_exception_(true) {
+        init_clog();
         msg_ << msg_cap;
     }
 
-    clog_logger_base::~clog_logger_base() {
-        if (auto_throw_exception_) {
-            raise_logger_exception();
+    void clog_logger_base::raise_logger_exception() const {
+        if (enable_auto_exception_) {
+            throw fatal_error(msg_.str(), source_file_, line_);
         }
     }
 
-    void clog_logger_base::raise_logger_exception() const {
-        throw fatal_error(msg_.str(), source_file_, line_);
+    void clog_logger_base::close() {
+        if (is_alive_) {
+            flush();
+            is_alive_ = false;
+        }
+    }
+
+    template <>
+    clog_logger_base& clog_logger_base::operator<< <fatal_error>(const fatal_error &except) {
+        if (except.default_error()) {
+            close();
+        }
+        else {
+            enable_auto_exception_ = false;
+            close();
+            throw except;
+        }
+        return *this;
+    }
+
+    template <>
+    clog_logger_base& clog_logger_base::operator<< <std::runtime_error>(const std::runtime_error &except) {
+        enable_auto_exception_ = false;
+        close();
+        throw except;
+        return *this;
+    }
+
+    template <>
+    clog_logger_base& clog_logger_base::operator<< <std::exception>(const std::exception &except) {
+        enable_auto_exception_ = false;
+        close();
+        throw except;
+        return *this;
     }
 
     CLOG_IMPL_LOGGER(info)
     CLOG_IMPL_LOGGER(warning)
     CLOG_IMPL_LOGGER(error)
 
-    clog_logger_fatal::clog_logger_fatal(const std::string &source_file, int64_t line, const std::string &msg_cap)
-        : clog_logger_base(source_file, line, msg_cap) { 
-        auto_throw_exception_ = true;
-    }
-
-    clog_logger_fatal::~clog_logger_fatal() {
+    CLOG_IMPL_LOGGER_CON(fatal)
+    void clog_logger_fatal::flush() {
         BOOST_LOG_TRIVIAL(fatal) << "Fatal error: " << source_file_ << " (" << line_ << "): " << msg_.str();
+        raise_logger_exception();
     }
 }

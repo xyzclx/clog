@@ -3,13 +3,13 @@
 #include <iostream>
 
 int main() {
-    //clog::add_file_log("abc");
+    clog::add_file_log("abc", false);
     
     CLOG(INFO) << "info" << 123;
     CLOG(ERROR) << "error" << 33;
     CLOG(WARNING) << "warning" << 223;
     try {
-        CLOG(FATAL) << "fatal" << " dfd" << 233 << clog::fatal_error();
+        CLOG(FATAL) << "fatal" << " dfd" << 233 << clog::fatal_error() << "ddddddddddddddddddd";
     }
     catch (clog::fatal_error &err) {
         std::cout << "enter except" << std::endl;
