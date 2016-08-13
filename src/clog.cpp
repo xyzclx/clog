@@ -11,6 +11,21 @@
 #include <iostream>
 #include <exception>
 
+#define CLOG_IMPL_LOGGER_CON(severity) \
+    clog_logger_##severity::clog_logger_##severity(const std::string &source_file, int64_t line, const std::string &msg_cap) \
+        : clog_logger_base(source_file, line, msg_cap) { \
+    }
+
+#define CLOG_IMPL_LOGGER_DES(severity) \
+    clog_logger_##severity::~clog_logger_##severity() { \
+        BOOST_LOG_TRIVIAL(severity) << msg_.str(); \
+    }
+
+#define CLOG_IMPL_LOGGER(severity) \
+    CLOG_IMPL_LOGGER_CON(severity) \
+    CLOG_IMPL_LOGGER_DES(severity)
+
+
 namespace clog {
     static bool __init = false;
 
@@ -47,17 +62,43 @@ namespace clog {
 
 
     fatal_error::fatal_error() 
-        : std::runtime_error("") {
+        : std::runtime_error(""), line_(-1), default_error_(true) {
     }
 
 
     fatal_error::fatal_error(const std::string &msg) 
-        : std::runtime_error(msg) {
+        : std::runtime_error(msg), line_(-1), default_error_(false) {
     }
 
-    std::ostream& operator << (std::ostream& stream, const fatal_error &err) {
-        stream.flush();
-        throw err;
-        return stream;
+    fatal_error::fatal_error(const std::string &msg, const std::string &source_file, int64_t line) 
+        : std::runtime_error(msg), source_file_(source_file), line_(line), default_error_(false) {
+    }
+
+    clog_logger_base::clog_logger_base(const std::string &source_file, int64_t line, const std::string &msg_cap)
+        : source_file_(source_file), line_(line), auto_throw_exception_(false) {
+        msg_ << msg_cap;
+    }
+
+    clog_logger_base::~clog_logger_base() {
+        if (auto_throw_exception_) {
+            raise_logger_exception();
+        }
+    }
+
+    void clog_logger_base::raise_logger_exception() const {
+        throw fatal_error(msg_.str(), source_file_, line_);
+    }
+
+    CLOG_IMPL_LOGGER(info)
+    CLOG_IMPL_LOGGER(warning)
+    CLOG_IMPL_LOGGER(error)
+
+    clog_logger_fatal::clog_logger_fatal(const std::string &source_file, int64_t line, const std::string &msg_cap)
+        : clog_logger_base(source_file, line, msg_cap) { 
+        auto_throw_exception_ = true;
+    }
+
+    clog_logger_fatal::~clog_logger_fatal() {
+        BOOST_LOG_TRIVIAL(fatal) << "Fatal error: " << source_file_ << " (" << line_ << "): " << msg_.str();
     }
 }
