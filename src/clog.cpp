@@ -1,5 +1,8 @@
 
 #include "clog/clog.h"
+
+#define BOOST_LOG_DYN_LINK 
+
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/log/exceptions.hpp>
@@ -128,7 +131,8 @@ namespace clog {
 
     CLOG_IMPL_LOGGER_CON(fatal)
     void clog_logger_fatal::flush() {
-        BOOST_LOG_TRIVIAL(fatal) << "Fatal error: " << source_file_ << " (" << line_ << "): " << msg_.str();
+        std::string sp = msg_.str().empty() ? "" : ": ";
+        BOOST_LOG_TRIVIAL(fatal) << "Fatal error: " << source_file_ << " (Line " << line_ << ")" << sp << msg_.str();
         raise_logger_exception();
     }
 }

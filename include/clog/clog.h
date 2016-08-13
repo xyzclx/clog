@@ -6,17 +6,18 @@
 #include <exception>
 #include <sstream>
 
-#define CLOG(severity)      CLOG##_##severity
+#define LOG(severity)                   CLOG##_##severity
 
-#define CLOG_CREATE_LOGGER(severity) \
-    for (clog::clog_logger_##severity __logger(__FILE__, __LINE__); \
+#define CLOG_CREATE_LOGGER(severity)    CLOG_CREATE_LOGGER_MSG(severity, "")
+#define CLOG_CREATE_LOGGER_MSG(severity, msg) \
+    for (clog::clog_logger_##severity __logger(__FILE__, __LINE__, msg); \
         __logger.is_alive(); __logger.close()) \
         __logger
 
-#define CLOG_INFO           CLOG_CREATE_LOGGER(info)
-#define CLOG_WARNING        CLOG_CREATE_LOGGER(warning)
-#define CLOG_ERROR          CLOG_CREATE_LOGGER(error)         
-#define CLOG_FATAL          CLOG_CREATE_LOGGER(fatal) 
+#define CLOG_INFO                       CLOG_CREATE_LOGGER(info)
+#define CLOG_WARNING                    CLOG_CREATE_LOGGER(warning)
+#define CLOG_ERROR                      CLOG_CREATE_LOGGER(error)         
+#define CLOG_FATAL                      CLOG_CREATE_LOGGER(fatal) 
 
 #define CLOG_DECL_LOGGER(severity) \
     class clog_logger_##severity : public clog_logger_base { \
@@ -25,6 +26,48 @@
         \
         virtual void flush(); \
     }
+
+#define CHECK(condition) \
+    if (!(condition)) \
+        CLOG_CREATE_LOGGER_MSG(fatal, "Check failed: " #condition " ")
+
+#define CHECK_EQ(op1, op2)             CHECK_OP(op1, op2, ==)
+#define CHECK_NE(op1, op2)             CHECK_OP(op1, op2, !=)
+#define CHECK_LT(op1, op2)             CHECK_OP(op1, op2, <)
+#define CHECK_LE(op1, op2)             CHECK_OP(op1, op2, <=)
+#define CHECK_GT(op1, op2)             CHECK_OP(op1, op2, >)
+#define CHECK_GE(op1, op2)             CHECK_OP(op1, op2, >=)
+
+#define CHECK_OP(op1, op2, op) \
+    if (!((op1) op (op2))) \
+        CLOG_CREATE_LOGGER_MSG(fatal, "Check failed: " \
+            #op1 " " #op " " #op2 " (" \
+            + clog::to_string(op1) + " " #op " " + clog::to_string(op2) + ") ")
+
+#ifdef _DEBUG
+
+#define DLOG(severity)                  LOG(severity)
+#define DCHECK(condition)               CHECK(condition)
+#define DCHECK_EQ(op1, op2)             CHECK_EQ(op1, op2)
+#define DCHECK_NE(op1, op2)             CHECK_NE(op1, op2)
+#define DCHECK_LT(op1, op2)             CHECK_LT(op1, op2)
+#define DCHECK_LE(op1, op2)             CHECK_LE(op1, op2)
+#define DCHECK_GT(op1, op2)             CHECK_GT(op1, op2)
+#define DCHECK_GE(op1, op2)             CHECK_GE(op1, op2)
+
+#else
+
+#define DLOG(severity)
+#define DCHECK(condition)
+#define DCHECK_EQ(op1, op2)
+#define DCHECK_NE(op1, op2)
+#define DCHECK_LT(op1, op2)
+#define DCHECK_LE(op1, op2)
+#define DCHECK_GT(op1, op2)
+#define DCHECK_GE(op1, op2)
+
+#endif
+
 
 namespace clog {
     void init_clog();
@@ -88,6 +131,13 @@ namespace clog {
     CLOG_DECL_LOGGER(warning);
     CLOG_DECL_LOGGER(error);
     CLOG_DECL_LOGGER(fatal);
+
+    template <class T>
+    std::string to_string(const T &t) {
+        std::stringstream stream;
+        stream << t;
+        return stream.str();
+    }
 }
 
 
