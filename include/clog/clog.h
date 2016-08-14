@@ -57,14 +57,14 @@
 
 #else
 
-#define DLOG(severity)
-#define DCHECK(condition)
-#define DCHECK_EQ(op1, op2)
-#define DCHECK_NE(op1, op2)
-#define DCHECK_LT(op1, op2)
-#define DCHECK_LE(op1, op2)
-#define DCHECK_GT(op1, op2)
-#define DCHECK_GE(op1, op2)
+#define DLOG(severity)                  clog::clog_logger_dummy()
+#define DCHECK(condition)               clog::clog_logger_dummy()
+#define DCHECK_EQ(op1, op2)             clog::clog_logger_dummy()
+#define DCHECK_NE(op1, op2)             clog::clog_logger_dummy()
+#define DCHECK_LT(op1, op2)             clog::clog_logger_dummy()
+#define DCHECK_LE(op1, op2)             clog::clog_logger_dummy()
+#define DCHECK_GT(op1, op2)             clog::clog_logger_dummy()
+#define DCHECK_GE(op1, op2)             clog::clog_logger_dummy()
 
 #endif
 
@@ -126,6 +126,15 @@ namespace clog {
 
     template <>
     clog_logger_base& clog_logger_base::operator<< <std::exception>(const std::exception &except);
+
+
+    class clog_logger_dummy {
+    public:
+        template <typename T>
+        clog_logger_dummy& operator << (const T &) {
+            return *this;
+        }
+    };
 
     CLOG_DECL_LOGGER(info);
     CLOG_DECL_LOGGER(warning);

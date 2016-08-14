@@ -1,4 +1,6 @@
 
+//#define _DEBUG
+
 #include "clog/clog.h"
 #include <iostream>
 
@@ -47,6 +49,24 @@ int main() {
 
     try {
         CHECK(a >= 3) << "asfdaf";
+    }
+    catch (clog::fatal_error) {
+    }
+
+    try {
+        DLOG(WARNING) << "warning dlog";
+    }
+    catch (clog::fatal_error) {
+    }
+
+    try {
+        DCHECK(2 == 3) << "dlog";
+    }
+    catch (clog::fatal_error) {
+    }
+
+    try {
+        DCHECK_GT(2, 2) << "dlog";
     }
     catch (clog::fatal_error) {
     }
