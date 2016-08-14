@@ -22,7 +22,7 @@
 #define CLOG_DECL_LOGGER(severity) \
     class clog_logger_##severity : public clog_logger_base { \
     public: \
-        clog_logger_##severity(const std::string &source_file, int64_t line, const std::string &msg_cap = ""); \
+        clog_logger_##severity(const std::string &source_file, int line, const std::string &msg_cap = ""); \
         \
         virtual void flush(); \
     }
@@ -77,16 +77,18 @@ namespace clog {
     public:
         fatal_error();
         fatal_error(const std::string &msg); 
-        fatal_error(const std::string &msg, const std::string &source_file, int64_t line);
+        fatal_error(const std::string &msg, const std::string &source_file, int line);
+
+        ~fatal_error() throw() {}
 
     public:
         const std::string& source_file() const { return source_file_; }
-        int64_t line() const { return line_; }
+        int line() const { return line_; }
         bool default_error() const { return default_error_; }
 
     protected:
         std::string source_file_;
-        int64_t line_;
+        int line_;
         bool default_error_;
     };
     
@@ -105,7 +107,7 @@ namespace clog {
         }
 
     protected:
-        clog_logger_base(const std::string &source_file, int64_t line, const std::string &msg_cap = "");
+        clog_logger_base(const std::string &source_file, int line, const std::string &msg_cap = "");
         void raise_logger_exception() const;
 
         virtual void flush() = 0;
@@ -113,7 +115,7 @@ namespace clog {
     protected:
         std::stringstream msg_;
         std::string source_file_;
-        int64_t line_;
+        int line_;
         bool is_alive_;
         bool enable_auto_exception_;
     };
@@ -142,7 +144,7 @@ namespace clog {
     CLOG_DECL_LOGGER(fatal);
 
     template <class T>
-    std::string to_string(const T &t) {
+    inline std::string to_string(const T &t) {
         std::stringstream stream;
         stream << t;
         return stream.str();

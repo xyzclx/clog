@@ -4,7 +4,8 @@ MKDIR			:= mkdir -p
 SRC_FILES 		:= test/test.cpp src/clog.cpp
 INC_FILES		:= include/clog/clog.h
 INC_DIR			:= -Iinclude 
-LIBS 			:= -lboost_log_setup -lboost_log -lboost_thread -lboost_date_time -pthread
+LIBS 			:= -lboost_log_setup -lboost_log -lboost_thread -lboost_date_time -lpthread
+CPPFLAGS 		:= 
 
 .PHONY:			all
 

@@ -15,7 +15,7 @@
 #include <exception>
 
 #define CLOG_IMPL_LOGGER_CON(severity) \
-    clog_logger_##severity::clog_logger_##severity(const std::string &source_file, int64_t line, const std::string &msg_cap) \
+    clog_logger_##severity::clog_logger_##severity(const std::string &source_file, int line, const std::string &msg_cap) \
         : clog_logger_base(source_file, line, msg_cap) { \
     }
 
@@ -73,11 +73,11 @@ namespace clog {
         : std::runtime_error(msg), line_(-1), default_error_(false) {
     }
 
-    fatal_error::fatal_error(const std::string &msg, const std::string &source_file, int64_t line) 
+    fatal_error::fatal_error(const std::string &msg, const std::string &source_file, int line) 
         : std::runtime_error(msg), source_file_(source_file), line_(line), default_error_(false) {
     }
 
-    clog_logger_base::clog_logger_base(const std::string &source_file, int64_t line, const std::string &msg_cap)
+    clog_logger_base::clog_logger_base(const std::string &source_file, int line, const std::string &msg_cap)
         : source_file_(source_file), line_(line), is_alive_(true), enable_auto_exception_(true) {
         init_clog();
         msg_ << msg_cap;
