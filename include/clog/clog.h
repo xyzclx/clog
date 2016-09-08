@@ -12,7 +12,7 @@
 #define CLOG_CREATE_LOGGER_MSG(severity, msg) \
     for (clog::clog_logger_##severity __logger(__FILE__, __LINE__, msg); \
         __logger.is_alive(); __logger.close()) \
-        __logger
+        __logger << ""
 
 #define CLOG_INFO                       CLOG_CREATE_LOGGER(info)
 #define CLOG_WARNING                    CLOG_CREATE_LOGGER(warning)
